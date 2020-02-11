@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -14,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import dao.RequestDataDao;
 import entity.RequestData;
 
+@SuppressWarnings("unused")
 @WebServlet({ "/service" })
 public class AsyncService extends HttpServlet {
 	private static final long serialVersionUID = 1339049045194824834L;
@@ -30,17 +34,7 @@ public class AsyncService extends HttpServlet {
 		StringBuffer params = new StringBuffer();
 		StringBuffer payload = new StringBuffer();
 		String line = null;
-		String ip = req.getRemoteAddr();
-		String header = req.getHeader("X-Forwarded-For");
-		try {
-			if (ip.equalsIgnoreCase("0:0:0:0:0:0:0:1") || ip.equalsIgnoreCase("127.0.0.1")) {
-				InetAddress localip = InetAddress.getLocalHost();
-				ip = "HostAddress: " + localip.getHostAddress();
-				ip = ip + " , HostName: " + localip.getHostName();
-			}
-		} catch (Exception exception) {
-		}
-		String client = ip + " , X-Forwarded-For:" + header;
+		String client = getClientIpAddr(req);
 		Enumeration<String> parameterNames = req.getParameterNames();
 		while (parameterNames.hasMoreElements()) {
 			String paramName = parameterNames.nextElement();
@@ -61,8 +55,59 @@ public class AsyncService extends HttpServlet {
 		System.out.println("Request " + type + " from (" + client + "): \nparams:" + params.toString() + "\npayload:"
 				+ payload.toString() + "\n\n==End of Request==");
 
-		RequestDataDao.add(RequestData.builder().date(new Date()).type(type).ip(ip).parameters(params.toString())
+		RequestDataDao.add(RequestData.builder().date(new Date()).type(type).ip(client).parameters(params.toString())
 				.payload(payload.toString()).build());
 
+	}
+
+	private Map<String, String> getRequestHeadersInMap(HttpServletRequest request) {
+
+		Map<String, String> result = new HashMap<>();
+
+		Enumeration headerNames = request.getHeaderNames();
+		while (headerNames.hasMoreElements()) {
+			String key = (String) headerNames.nextElement();
+			String value = request.getHeader(key);
+			result.put(key, value);
+			System.out.println(key + ":" + value);
+		}
+
+		return result;
+	}
+
+	private static String getClientIp(HttpServletRequest request) {
+
+		String remoteAddr = "";
+
+		if (request != null) {
+			remoteAddr = request.getHeader("X-FORWARDED-FOR");
+			if (remoteAddr == null || "".equals(remoteAddr)) {
+				remoteAddr = request.getRemoteAddr();
+			}
+		}
+		System.out.println(remoteAddr);
+		return remoteAddr;
+	}
+
+	public static String getClientIpAddr(HttpServletRequest request) {
+		String ip = request.getHeader("X-Forwarded-For");
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("Proxy-Client-IP");
+		}
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("WL-Proxy-Client-IP");
+		}
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("HTTP_CLIENT_IP");
+		}
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+		}
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+			ip = request.getRemoteAddr();
+		}
+
+		System.out.println(ip);
+		return ip;
 	}
 }
