@@ -41,7 +41,13 @@
 		</div>
 	</div>
 	<div class="container border rounded w-100">
-
+		<a href="clear">
+			<button class="btn">
+				<span class="badge badge-info">Clear Data</span>
+			</button>
+		</a>
+	</div>
+	<div class="container border rounded w-100">
 		<br />
 		<table id="data" class="table table-striped table-inverse table-responsive table-hover w-100">
 			<thead class="thead-dark">

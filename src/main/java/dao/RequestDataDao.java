@@ -20,4 +20,8 @@ public class RequestDataDao {
 		return requests;
 	}
 
+	public static void clear() {
+		requests.clear();
+	}
+
 }
