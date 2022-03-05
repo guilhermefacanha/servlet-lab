@@ -5,6 +5,13 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
 
+	<repositories>
+		<repository>
+			<id>gf-github</id>
+			<url>https://raw.githubusercontent.com/guilhermefacanha/gf-httpclient/repository</url>
+		</repository>
+	</repositories>
+
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api -->
 		<dependency>
@@ -14,6 +21,12 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>br.com.gfsolucoesti</groupId>
+			<artifactId>gf-httpclient</artifactId>
+			<version>1.0.3</version>
+		</dependency>
+
 		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -21,6 +34,14 @@
 			<version>1.18.12</version>
 			<scope>provided</scope>
 		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.11</version>
+		</dependency>
+
 
 	</dependencies>
 
