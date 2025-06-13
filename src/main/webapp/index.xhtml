@@ -1,0 +1,78 @@
+<ui:composition
+        xmlns="http://www.w3.org/1999/xhtml"
+        xmlns:h="http://xmlns.jcp.org/jsf/html"
+        xmlns:f="http://xmlns.jcp.org/jsf/core"
+        xmlns:jsf="http://xmlns.jcp.org/jsf"
+        xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+        xmlns:p="http://primefaces.org/ui"
+        template="template/template.xhtml">
+    <ui:define name="body">
+        <f:metadata>
+            <f:event type="preRenderView" listener="#{requestDataController.carregarLista()}"/>
+        </f:metadata>
+        <h2>Request Data</h2>
+        <h:form>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1em;">
+                <p:commandButton value="Clear Data" action="#{requestDataController.deleteAll()}" update="@(.dataTable)"
+                                 styleClass="mb-2 ui-button-danger">
+                    <p:confirm header="Confirmation" message="Are you sure you want to proceed?" icon="pi pi-exclamation-triangle"/>
+                </p:commandButton>
+                <p:commandButton value="How to Test" icon="pi pi-info-circle" styleClass="mb-2 ui-button-info"
+                                 onclick="PF('howToTestSidebar').show(); return false;"
+                                 style="float: right;"/>
+            </div>
+            <p:dataTable id="dataTable" styleClass="dataTable" var="data" value="#{requestDataController.list}"
+                         paginator="true" rows="10" responsiveLayout="scroll" stripedRows="true">
+                <p:column headerText="Id">
+                    <h:outputLink value="request_data_detail.xhtml?id=#{data.id}">
+                        <h:outputText value="#{data.id}"/>
+                    </h:outputLink>
+                </p:column>
+                <p:column headerText="From">
+                    <h:outputText value="#{data.ip}"/>
+                </p:column>
+                <p:column headerText="Type">
+                    <h:outputText value="#{data.type}"/>
+                </p:column>
+                <p:column headerText="Date">
+                    <h:outputText value="#{data.date}">
+                        <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss"/>
+                    </h:outputText>
+                </p:column>
+                <p:column headerText="Params">
+                    <h:outputText value="#{data.parameters}"/>
+                </p:column>
+                <p:column headerText="Payload">
+                    <h:outputText value="#{data.payload}"/>
+                </p:column>
+                <p:column headerText="Header">
+                    <h:outputText value="#{data.headerListAsString}" escape="false"/>
+                </p:column>
+            </p:dataTable>
+
+        </h:form>
+
+        <p:sidebar widgetVar="howToTestSidebar" position="right" styleClass="p-sidebar-md" style="width: 40%;">
+            <p:card header="How to Test the Service" styleClass="mt-3">
+                <p>
+                    You can test this app by sending HTTP <b>GET</b> or <b>POST</b> requests to the
+                    <code>/service</code> endpoint.
+                </p>
+                <ul>
+                    <li>
+                        <b>GET example:</b><br/>
+                        <code>curl "http://localhost:8080/&lt;your-app-context&gt;/service?foo=bar"</code>
+                    </li>
+                    <li class="mt-2">
+                        <b>POST example:</b><br/>
+                        <code>curl -X POST -d "foo=bar" "http://localhost:8080/&lt;your-app-context&gt;/service"</code>
+                    </li>
+                </ul>
+                <p>
+                    After making a request, <b>refresh this page</b> to see the new entry in the table.
+                </p>
+            </p:card>
+        </p:sidebar>
+
+    </ui:define>
+</ui:composition>

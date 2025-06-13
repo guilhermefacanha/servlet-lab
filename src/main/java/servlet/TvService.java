@@ -1,27 +1,23 @@
 package servlet;
 
+import entity.M3UEntry;
+import kong.unirest.HttpResponse;
+import kong.unirest.Unirest;
+import org.apache.commons.lang3.StringUtils;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.lang3.StringUtils;
-
-import entity.M3UEntry;
-import http.client.GFCall;
-import http.client.GFHttpClient;
-import http.client.GFResponse;
-import http.client.enumeration.RequestMethod;
 
 @WebServlet("/tv")
 public class TvService extends HttpServlet {
@@ -43,13 +39,11 @@ public class TvService extends HttpServlet {
         
         String[] tokens = getTokens(req);
 
-        GFCall call = GFCall.builder()
-                .method(RequestMethod.GET)
-                .headers(Collections.singletonMap("User-Agent", "Mozilla/5.0 Firefox/26.0"))
-                .url(url)
-                .build();
-        GFResponse httpResp = GFHttpClient.call(call);
-        String m3uContent = new String(httpResp.getContentByte());
+        HttpResponse<String> httpResp = Unirest.get(url)
+                .header("User-Agent", "Mozilla/5.0 Firefox/26.0")
+                .asString();
+
+        String m3uContent = httpResp.getBody();
         String[] lines = StringUtils.split(m3uContent, System.lineSeparator());
 
         List<M3UEntry> list = new ArrayList<M3UEntry>();

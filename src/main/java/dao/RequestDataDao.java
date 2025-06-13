@@ -1,27 +1,62 @@
 package dao;
 
-import java.util.ArrayList;
+import entity.RequestData;
+import jakarta.ejb.Stateless;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
 
-import entity.RequestData;
-
+@Slf4j
+@Stateless
 public class RequestDataDao {
-	private static List<RequestData> requests = new ArrayList<RequestData>();
 
-	private RequestDataDao() throws InstantiationException {
-		throw new InstantiationException("Singleton Class!");
-	}
+    @PersistenceContext(unitName = "requestDataPU")
+    private EntityManager entityManager;
 
-	public static void add(RequestData data) {
-		requests.add(data);
-	}
+    @Transactional
+    public RequestData save(RequestData data) {
+        log.info("=======  save .... ========");
+        data =entityManager.merge(data);
+        entityManager.merge(data);
+        entityManager.flush();
+        log.info("=======  save  finished========");
+        return data;
+    }
 
-	public static List<RequestData> getRequests() {
-		return requests;
-	}
+    @Transactional
+    public void deleteById(Long id) {
+        log.info("=======  deleteById .... ========");
+        RequestData entity = entityManager.find(RequestData.class, id);
+        if (entity != null) {
+            entityManager.remove(entity);
+        }
+        log.info("=======  deleteById  finished========");
+    }
 
-	public static void clear() {
-		requests.clear();
-	}
+    public List<RequestData> getRequests() {
+        log.info("=======  getRequests .... ========");
+        List<RequestData> result = entityManager.createQuery("SELECT r FROM RequestData r", RequestData.class)
+                .setHint("org.hibernate.cacheable", true)
+                .getResultList();
+        log.info("=======  getRequests  finished========");
+        return result;
+    }
+
+    public RequestData getRequestById(Long id) {
+        log.info("=======  getRequestById .... ========");
+        RequestData result = entityManager.find(RequestData.class, id);
+        log.info("=======  getRequestById  finished========");
+        return result;
+    }
+
+    @Transactional
+    public void clear() {
+        log.info("=======  clear .... ========");
+        entityManager.createQuery("DELETE FROM RequestData").executeUpdate();
+        log.info("=======  clear  finished========");
+    }
 
 }

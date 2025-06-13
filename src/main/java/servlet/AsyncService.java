@@ -1,26 +1,29 @@
 package servlet;
 
+import dao.RequestDataDao;
+import entity.RequestData;
+import jakarta.inject.Inject;
+import jakarta.persistence.Id;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import dao.RequestDataDao;
-import entity.RequestData;
-
 @SuppressWarnings("unused")
 @WebServlet({ "/service" })
 public class AsyncService extends HttpServlet {
 	private static final long serialVersionUID = 1339049045194824834L;
+
+	@Inject
+	private RequestDataDao requestDataDao;
 
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		process(req, resp, "GET");
@@ -55,9 +58,18 @@ public class AsyncService extends HttpServlet {
 		System.out.println("Request " + type + " from (" + client + "): \nparams:" + params.toString() + "\npayload:"
 				+ payload.toString() + "\n\n==End of Request==");
 
-		RequestDataDao.add(RequestData.builder().date(new Date()).type(type).ip(client).parameters(params.toString())
-				.payload(payload.toString()).build());
+		RequestData requestData = RequestData.builder()
+				.date(new Date())
+				.updateDate(new Date())
+				.type(type)
+				.ip(client)
+				.parameters(params.toString())
+				.payload(payload.toString())
+				.build();
 
+		requestData.setHeaderMap(getRequestHeadersInMap(req));
+
+		requestDataDao.save(requestData);
 	}
 
 	private Map<String, String> getRequestHeadersInMap(HttpServletRequest request) {
