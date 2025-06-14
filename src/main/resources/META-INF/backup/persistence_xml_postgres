@@ -4,21 +4,18 @@
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
              https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
              version="3.1">
-    <persistence-unit name="requestDataPersistentUnit" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="requestDataPU" transaction-type="JTA">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-        <non-jta-data-source>java:jboss/PostgresDS</non-jta-data-source>
-        <class>entity.RequestData</class>
         <properties>
-
-            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
-            <property name="hibernate.default_schema" value="servletapp"/>
+            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/servlet_customer001"/>
+            <property name="jakarta.persistence.jdbc.user" value="usuario"/>
+            <property name="jakarta.persistence.jdbc.password" value="senha"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
             <property name="hibernate.hbm2ddl.auto" value="update"/>
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="false"/>
             <property name="hibernate.use_sql_comments" value="false"/>
-
-            <property name="hibernate.enable_lazy_load_no_trans" value="true" />
-            <property name="hibernate.connection.autocommit" value="false"/>
 
             <!-- Optional: Enable second-level cache if needed -->
             <property name="jakarta.persistence.sharedCache.mode" value="ENABLE_SELECTIVE"/>

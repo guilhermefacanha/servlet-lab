@@ -1,10 +1,10 @@
 package dao;
 
+import annotations.TransactionalResourceLocal;
 import entity.RequestData;
 import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -13,20 +13,19 @@ import java.util.List;
 @Stateless
 public class RequestDataDao {
 
-    @PersistenceContext(unitName = "requestDataPU")
+    @Inject
     private EntityManager entityManager;
 
-    @Transactional
+    @TransactionalResourceLocal
     public RequestData save(RequestData data) {
         log.info("=======  save .... ========");
         data =entityManager.merge(data);
         entityManager.merge(data);
-        entityManager.flush();
         log.info("=======  save  finished========");
         return data;
     }
 
-    @Transactional
+    @TransactionalResourceLocal
     public void deleteById(Long id) {
         log.info("=======  deleteById .... ========");
         RequestData entity = entityManager.find(RequestData.class, id);
@@ -52,7 +51,7 @@ public class RequestDataDao {
         return result;
     }
 
-    @Transactional
+    @TransactionalResourceLocal
     public void clear() {
         log.info("=======  clear .... ========");
         entityManager.createQuery("DELETE FROM RequestData").executeUpdate();

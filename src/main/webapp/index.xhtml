@@ -22,7 +22,9 @@
                                  style="float: right;"/>
             </div>
             <p:dataTable id="dataTable" styleClass="dataTable" var="data" value="#{requestDataController.list}"
-                         paginator="true" rows="10" responsiveLayout="scroll" stripedRows="true">
+                         paginator="true" paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                         currentPageReportTemplate="{startRecord}-{endRecord} of {totalRecords} records"
+                         rows="10" responsiveLayout="scroll" stripedRows="true">
                 <p:column headerText="Id">
                     <h:outputLink value="request_data_detail.xhtml?id=#{data.id}">
                         <h:outputText value="#{data.id}"/>

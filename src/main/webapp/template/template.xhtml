@@ -8,7 +8,7 @@
       xmlns:p="http://primefaces.org/ui">
 <f:view>
     <h:head>
-        <title>PrimeFaces Template</title>
+        <title>My App</title>
         <link rel="stylesheet" type="text/css" href="#{request.contextPath}/css/layout.css"/>
     </h:head>
     <h:body>
@@ -23,6 +23,8 @@
             <p:panelMenu style="width:100%">
                 <p:submenu label="Menu" expanded="true">
                     <p:menuitem value="Home"  icon="pi pi-home" outcome="index"/>
+                    <p:menuitem value="Users"  icon="pi pi-users" outcome="users"/>
+                    <p:menuitem value="Sign Out" icon="pi pi-sign-out" action="#{loginController.signOut}" rendered="#{loginController.loggedIn}"/>
                 </p:submenu>
             </p:panelMenu>
         </div>
