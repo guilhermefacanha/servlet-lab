@@ -1,5 +1,6 @@
 package interceptor;
 
+import annotations.ApplicationTenantDB;
 import annotations.TransactionalResourceLocal;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
@@ -23,6 +24,7 @@ public class TransactionInterceptor implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @ApplicationTenantDB
     private @Inject EntityManager manager;
 
     @AroundInvoke

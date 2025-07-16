@@ -2,7 +2,6 @@ package listener;
 
 
 import controller.LoginController;
-import controller.UserController;
 import jakarta.faces.application.Application;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.event.PhaseEvent;

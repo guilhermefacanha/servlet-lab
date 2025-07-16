@@ -10,49 +10,55 @@
         <f:metadata>
             <f:event type="preRenderView" listener="#{requestDataController.carregarLista()}"/>
         </f:metadata>
-        <h2>Request Data</h2>
-        <h:form>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1em;">
-                <p:commandButton value="Clear Data" action="#{requestDataController.deleteAll()}" update="@(.dataTable)"
-                                 styleClass="mb-2 ui-button-danger">
-                    <p:confirm header="Confirmation" message="Are you sure you want to proceed?" icon="pi pi-exclamation-triangle"/>
-                </p:commandButton>
-                <p:commandButton value="How to Test" icon="pi pi-info-circle" styleClass="mb-2 ui-button-info"
-                                 onclick="PF('howToTestSidebar').show(); return false;"
-                                 style="float: right;"/>
-            </div>
-            <p:dataTable id="dataTable" styleClass="dataTable" var="data" value="#{requestDataController.list}"
-                         paginator="true" paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
-                         currentPageReportTemplate="{startRecord}-{endRecord} of {totalRecords} records"
-                         rows="10" responsiveLayout="scroll" stripedRows="true">
-                <p:column headerText="Id">
-                    <h:outputLink value="request_data_detail.xhtml?id=#{data.id}">
-                        <h:outputText value="#{data.id}"/>
-                    </h:outputLink>
-                </p:column>
-                <p:column headerText="From">
-                    <h:outputText value="#{data.ip}"/>
-                </p:column>
-                <p:column headerText="Type">
-                    <h:outputText value="#{data.type}"/>
-                </p:column>
-                <p:column headerText="Date">
-                    <h:outputText value="#{data.date}">
-                        <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss"/>
-                    </h:outputText>
-                </p:column>
-                <p:column headerText="Params">
-                    <h:outputText value="#{data.parameters}"/>
-                </p:column>
-                <p:column headerText="Payload">
-                    <h:outputText value="#{data.payload}"/>
-                </p:column>
-                <p:column headerText="Header">
-                    <h:outputText value="#{data.headerListAsString}" escape="false"/>
-                </p:column>
-            </p:dataTable>
+        <p:card title="Request Data List" styleClass="mb-3"
+                subtitle="View and manage all request data entries.">
 
-        </h:form>
+            <h:form>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1em;">
+                    <p:commandButton value="Clear Data" action="#{requestDataController.deleteAll()}"
+                                     update="@(.dataTable)"
+                                     styleClass="mb-2 ui-button-danger">
+                        <p:confirm header="Confirmation" message="Are you sure you want to proceed?"
+                                   icon="pi pi-exclamation-triangle"/>
+                    </p:commandButton>
+                    <p:commandButton value="How to Test" icon="pi pi-info-circle" styleClass="mb-2 ui-button-info"
+                                     onclick="PF('howToTestSidebar').show(); return false;"
+                                     style="float: right;"/>
+                </div>
+                <p:dataTable id="dataTable" styleClass="dataTable" var="data" value="#{requestDataController.list}"
+                             paginator="true"
+                             paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                             currentPageReportTemplate="{startRecord}-{endRecord} of {totalRecords} records"
+                             rows="10" responsiveLayout="scroll" stripedRows="true">
+                    <p:column headerText="Id">
+                        <h:outputLink value="request_data_detail.xhtml?id=#{data.id}">
+                            <h:outputText value="#{data.id}"/>
+                        </h:outputLink>
+                    </p:column>
+                    <p:column headerText="From">
+                        <h:outputText value="#{data.ip}"/>
+                    </p:column>
+                    <p:column headerText="Type">
+                        <h:outputText value="#{data.type}"/>
+                    </p:column>
+                    <p:column headerText="Date">
+                        <h:outputText value="#{data.date}">
+                            <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss"/>
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="Params">
+                        <h:outputText value="#{data.parameters}"/>
+                    </p:column>
+                    <p:column headerText="Payload">
+                        <h:outputText value="#{data.payload}"/>
+                    </p:column>
+                    <p:column headerText="Header">
+                        <h:outputText value="#{data.headerListAsString}" escape="false"/>
+                    </p:column>
+                </p:dataTable>
+
+            </h:form>
+        </p:card>
 
         <p:sidebar widgetVar="howToTestSidebar" position="right" styleClass="p-sidebar-md" style="width: 40%;">
             <p:card header="How to Test the Service" styleClass="mt-3">

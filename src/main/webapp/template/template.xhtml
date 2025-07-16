@@ -8,7 +8,7 @@
       xmlns:p="http://primefaces.org/ui">
 <f:view>
     <h:head>
-        <title>My App</title>
+        <title>#{loginController.selectedTenantName}</title>
         <link rel="stylesheet" type="text/css" href="#{request.contextPath}/css/layout.css"/>
     </h:head>
     <h:body>
@@ -16,29 +16,41 @@
                  redisplay="true">
             <p:autoUpdate/>
         </p:growl>
-        <div class="template-header" style="margin-left: 15px;">
-            <h1> My App</h1>
+        <div class="template-header" style="display: flex; align-items: center; justify-content: space-between; margin-left: 15px; margin-right: 15px;">
+            <div>
+                <h1>Web - #{loginController.selectedTenantName}</h1>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1em;">
+                Olá, <h:outputText value="#{loginController.loggedUser.name}"/>
+                <p:commandButton value="Sign Out" icon="pi pi-sign-out" action="#{loginController.signOut}"
+                                 rendered="#{loginController.loggedIn}" styleClass="ui-button-secondary"/>
+            </div>
         </div>
         <div class="layout-sidebar">
             <p:panelMenu style="width:100%">
                 <p:submenu label="Menu" expanded="true">
-                    <p:menuitem value="Home"  icon="pi pi-home" outcome="index"/>
-                    <p:menuitem value="Users"  icon="pi pi-users" outcome="users"/>
-                    <p:menuitem value="Sign Out" icon="pi pi-sign-out" action="#{loginController.signOut}" rendered="#{loginController.loggedIn}"/>
+                    <p:menuitem value="Home" icon="pi pi-home" outcome="index"/>
+                    <p:menuitem value="Users" icon="pi pi-users" outcome="users"/>
+                    <p:menuitem value="Sign Out" icon="pi pi-sign-out" action="#{loginController.signOut}" style="margin-top: 100px; border-top: 1px solid var(--bluegray-200);"
+                                rendered="#{loginController.loggedIn}"/>
                 </p:submenu>
             </p:panelMenu>
         </div>
         <div class="layout-content">
-            <div class="card ui-fluid">
+            <div style="margin: 0px 5px 5px 5px;">
                 <ui:insert name="body"/>
             </div>
         </div>
 
+        <!-- Footer to display MAC Address -->
+        <div style="position: fixed; bottom: 0; width: 100%; background-color: #f8f9fa; text-align: center; padding: 8px 0; border-top: 1px solid #dee2e6; font-size: 0.9em;">
+            NODE: <h:outputText value="#{serverInfoController.serverMacAddress}" />
+        </div>
 
 
         <p:confirmDialog global="true" showEffect="fade" hideEffect="fade" responsive="true" width="350">
             <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
-            <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes" />
+            <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes"/>
         </p:confirmDialog>
 
     </h:body>

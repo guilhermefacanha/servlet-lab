@@ -1,5 +1,6 @@
 package dao;
 
+import annotations.ApplicationTenantDB;
 import annotations.TransactionalResourceLocal;
 import entity.User;
 import jakarta.ejb.Stateless;
@@ -16,6 +17,7 @@ public class UserDao implements Serializable {
 
     private static final long serialVersionUID = 352749899047222475L;
 
+    @ApplicationTenantDB
     @Inject
     private EntityManager entityManager;
 

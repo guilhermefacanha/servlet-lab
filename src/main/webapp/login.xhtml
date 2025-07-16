@@ -19,18 +19,37 @@
         </style>
     </h:head>
     <h:body>
+        <f:metadata>
+            <f:event type="preRenderView" listener="#{loginController.loadTenantConfigs()}"/>
+        </f:metadata>
+        <p:messages id="msgs" showDetail="true" autoUpdate="true"/>
         <div class="login-panel">
             <p:panel header="Sign In" style="text-align:center;">
                 <h:form>
-                    <p:messages id="msgs" showDetail="true" autoUpdate="true"/>
+                    <p:selectOneMenu id="tenant" value="#{loginController.selectedTenant}"
+                                     style="width:100%;margin-bottom:1em;" requiredMessage="Please select a tenant"
+                                     required="true">
+                        <f:selectItem itemLabel="Select Tenant" itemValue="#{null}" noSelectionOption="true"/>
+                        <f:selectItems value="#{loginController.tenantConfigs}" var="tenant"
+                                       itemLabel="#{tenant.nome}" itemValue="#{tenant.tenantId}"/>
+                    </p:selectOneMenu>
                     <p:inputText id="username" value="#{loginController.username}" placeholder="Username"
-                                 required="true" style="width:100%;margin-bottom:1em;"/>
+                                 required="true" style="width:100%;margin-bottom:1em;"
+                                 requiredMessage="Required field - username"/>
                     <p:password id="password" value="#{loginController.password}" placeholder="Password" required="true"
+                                requiredMessage="Required field - password"
                                 style="width:100%;margin-bottom:1em;"/>
                     <p:commandButton value="Login" action="#{loginController.login}" update="msgs" style="width:100%;"/>
                 </h:form>
             </p:panel>
         </div>
+
+        <!-- Footer to display MAC Address -->
+        <div style="position: fixed; bottom: 0; width: 100%; background-color: #f8f9fa; text-align: center; padding: 8px 0; border-top: 1px solid #dee2e6; font-size: 0.9em;">
+            NODE: <h:outputText value="#{serverInfoController.serverMacAddress}" />
+        </div>
+
+
     </h:body>
 </f:view>
 </html>

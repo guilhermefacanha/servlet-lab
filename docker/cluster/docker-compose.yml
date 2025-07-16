@@ -1,0 +1,109 @@
+# Define secrets at the top level
+secrets:
+  ADMIN_USER:
+    environment: MY_WILDFLY_ADMIN_USER # Create this file with the admin username
+  ADMIN_PASSWORD:
+    environment: MY_WILDFLY_ADMIN_PASSWORD # Create this file with the admin password
+
+services:
+#  nginx:
+#    image: imkulikov/nginx-sticky:latest
+#    container_name: nginx_lb
+#    ports:
+#      - "80:80"
+#    volumes:
+#      - ./files/nginx.conf:/etc/nginx/nginx.conf:ro
+#    depends_on:
+#      - wildfly1
+#      - wildfly2
+#      - wildfly3
+#    networks:
+#      - app_network
+
+  haproxy:
+    image: haproxy:latest # Use the official HAProxy Docker image
+    container_name: haproxy_lb
+    ports:
+      - "80:80" # Expose HAProxy on host port 80
+    volumes:
+      - ./files/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro # Mount your HAProxy config
+    depends_on:
+      - wildfly1
+      - wildfly2
+      - wildfly3
+    networks:
+      - app_network
+    restart: always # Ensures HAProxy restarts if it crashes
+
+  wildfly1:
+    build:
+      dockerfile: Dockerfile
+      secrets: # Pass secrets to the build context
+        - ADMIN_USER
+        - ADMIN_PASSWORD
+    container_name: wildfly1
+    environment:
+      - JBOSS_BIND_ADDRESS=0.0.0.0
+      - JBOSS_BIND_ADDRESS_PRIVATE=wildfly1
+      - JBOSS_BIND_ADDRESS_MANAGEMENT=0.0.0.0
+      - JBOSS_BIND_ADDRESS_UNSECURED=0.0.0.0
+      - WILDFLY_NODE_NAME=node1
+      - DB_HOST=host.docker.internal # Replace with actual value
+    ports:
+      - "8080"
+      - "7600"
+      - "57600"
+      - "7601"
+      - "9990:9990"
+    networks:
+      - app_network
+
+  wildfly2:
+    build:
+      dockerfile: Dockerfile
+      secrets:
+        - ADMIN_USER
+        - ADMIN_PASSWORD
+    container_name: wildfly2
+    environment:
+      - JBOSS_BIND_ADDRESS=0.0.0.0
+      - JBOSS_BIND_ADDRESS_PRIVATE=wildfly2
+      - JBOSS_BIND_ADDRESS_MANAGEMENT=0.0.0.0
+      - JBOSS_BIND_ADDRESS_UNSECURED=0.0.0.0
+      - WILDFLY_NODE_NAME=node2
+      - DB_HOST=host.docker.internal # Replace with actual value
+    ports:
+      - "8080"
+      - "7600"
+      - "57600"
+      - "7601"
+      - "9990"
+    networks:
+      - app_network
+
+  wildfly3:
+    build:
+      dockerfile: Dockerfile
+      secrets:
+        - ADMIN_USER
+        - ADMIN_PASSWORD
+    container_name: wildfly3
+    environment:
+      - JBOSS_BIND_ADDRESS=0.0.0.0
+      - JBOSS_BIND_ADDRESS_PRIVATE=wildfly3
+      - JBOSS_BIND_ADDRESS_MANAGEMENT=0.0.0.0
+      - JBOSS_BIND_ADDRESS_UNSECURED=0.0.0.0
+      - WILDFLY_NODE_NAME=node3
+      - DB_HOST=host.docker.internal # Replace with actual value
+    ports:
+      - "8080"
+      - "7600"
+      - "57600"
+      - "7601"
+      - "9990"
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

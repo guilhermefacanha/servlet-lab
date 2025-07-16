@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -14,7 +15,9 @@ import java.security.NoSuchAlgorithmException;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class User implements Serializable {
+
+    private static final long serialVersionUID = 7726011921638934444L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -13,65 +13,67 @@
             <f:event type="preRenderView" listener="#{requestDataController.loadSelected()}"/>
         </f:metadata>
 
-        <h2>Request Data Detail</h2>
-        <hr/>
+        <p:card title="Request Data Detail" styleClass="mb-3"
+                subtitle="View the details of a specific request data entry.">
 
-        <h:form>
+            <h:form>
 
-            <h:panelGroup rendered="#{empty requestDataController.ent}">
-                <p:message severity="warn" summary="No data found for the given ID."/>
-                <p:link value="Back to List" outcome="index.xhtml" styleClass="ui-button ui-button-secondary mt-3"/>
-            </h:panelGroup>
+                <h:panelGroup rendered="#{empty requestDataController.ent}">
+                    <p:message severity="warn" summary="No data found for the given ID."/>
+                    <p:link value="Back to List" outcome="index.xhtml" styleClass="ui-button ui-button-secondary mt-3"/>
+                </h:panelGroup>
 
-            <h:panelGroup rendered="#{not empty requestDataController.ent}">
-                <h:panelGrid columns="2" cellpadding="5" styleClass="ui-panelgrid-blank">
-                    <h:outputText value="ID:"/>
-                    <h:outputText value="#{requestDataController.ent.id}"/>
+                <h:panelGroup rendered="#{not empty requestDataController.ent}">
+                    <h:panelGrid columns="2" cellpadding="5" styleClass="ui-panelgrid-blank">
+                        <h:outputText value="ID:"/>
+                        <h:outputText value="#{requestDataController.ent.id}"/>
 
-                    <h:outputText value="Type:"/>
-                    <h:outputText value="#{requestDataController.ent.type}"/>
+                        <h:outputText value="Type:"/>
+                        <h:outputText value="#{requestDataController.ent.type}"/>
 
-                    <h:outputText value="IP:"/>
-                    <h:outputText value="#{requestDataController.ent.ip}"/>
+                        <h:outputText value="IP:"/>
+                        <h:outputText value="#{requestDataController.ent.ip}"/>
 
-                    <h:outputText value="Date:"/>
-                    <h:outputText value="#{requestDataController.ent.date}">
-                        <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss"/>
-                    </h:outputText>
+                        <h:outputText value="Date:"/>
+                        <h:outputText value="#{requestDataController.ent.date}">
+                            <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss"/>
+                        </h:outputText>
 
-                    <h:outputText value="Update Date:"/>
-                    <h:outputText value="#{requestDataController.ent.updateDate}">
-                        <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss"/>
-                    </h:outputText>
+                        <h:outputText value="Update Date:"/>
+                        <h:outputText value="#{requestDataController.ent.updateDate}">
+                            <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss"/>
+                        </h:outputText>
 
-                    <h:outputText value="Parameters:"/>
-                    <h:outputText value="#{requestDataController.ent.parameters}"/>
+                        <h:outputText value="Parameters:"/>
+                        <h:outputText value="#{requestDataController.ent.parameters}"/>
 
-                    <h:outputText value="Payload:"/>
-                    <h:outputText escape="false">
-                        <pre><code>#{requestDataController.ent.payload}</code></pre>
-                    </h:outputText>
+                        <h:outputText value="Payload:"/>
+                        <h:outputText escape="false">
+                            <pre><code>#{requestDataController.ent.payload}</code></pre>
+                        </h:outputText>
 
-                    <h:outputText value="Header:"/>
-                    <h:outputText value="#{requestDataController.ent.headerListAsString}" escape="false"/>
-                </h:panelGrid>
-
-                <div class="mt-3">
-                    <h:panelGrid columns="3">
-                        <p:commandButton  styleClass="ui-button ui-button-secondary" action="index.xhtml?faces-redirect=true"
-                                         value="Back to List" icon="pi pi-arrow-left"/>
-                        <p:commandButton value="Update" icon="pi pi-refresh"
-                                         actionListener="#{requestDataController.updateRequestData()}"
-                                         update="@form" styleClass="ui-button-primary ml-2"/>
-                        <p:commandButton value="Delete" icon="pi pi-trash" styleClass="ui-button-danger ml-2"
-                                         actionListener="#{requestDataController.deleteRequestData()}">
-                            <p:confirm header="Confirm" message="Do you want to delete this record?" icon="pi pi-info-circle"/>
-                        </p:commandButton>
+                        <h:outputText value="Header:"/>
+                        <h:outputText value="#{requestDataController.ent.headerListAsString}" escape="false"/>
                     </h:panelGrid>
-                </div>
-            </h:panelGroup>
 
-        </h:form>
+                    <div class="mt-3">
+                        <h:panelGrid columns="3">
+                            <p:commandButton styleClass="ui-button ui-button-secondary"
+                                             action="index.xhtml?faces-redirect=true"
+                                             value="Back to List" icon="pi pi-arrow-left"/>
+                            <p:commandButton value="Update" icon="pi pi-refresh"
+                                             actionListener="#{requestDataController.updateRequestData()}"
+                                             update="@form" styleClass="ui-button-primary ml-2"/>
+                            <p:commandButton value="Delete" icon="pi pi-trash" styleClass="ui-button-danger ml-2"
+                                             actionListener="#{requestDataController.deleteRequestData()}">
+                                <p:confirm header="Confirm" message="Do you want to delete this record?"
+                                           icon="pi pi-info-circle"/>
+                            </p:commandButton>
+                        </h:panelGrid>
+                    </div>
+                </h:panelGroup>
 
+            </h:form>
+        </p:card>
     </ui:define>
 </ui:composition>

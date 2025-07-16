@@ -1,0 +1,9 @@
+services:
+  haproxy:
+    image: haproxy:latest
+    container_name: haproxy_lb
+    ports:
+      - "81:81"
+    volumes:
+      - ./files/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    restart: always

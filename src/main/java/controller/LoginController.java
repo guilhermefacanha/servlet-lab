@@ -1,6 +1,8 @@
 package controller;
 
+import dao.TenantConfigDAO;
 import dao.UserDao;
+import entity.TenantConfig;
 import entity.User;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
@@ -10,17 +12,34 @@ import lombok.Setter;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+import java.util.List;
 
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
+import org.apache.commons.lang3.StringUtils;
+import tenants.context.TenantContext;
+import tenants.data.TenantConfigCache;
 
 @Named
 @SessionScoped
 public class LoginController implements Serializable {
 
     @Inject
+    private TenantConfigDAO tenantConfigDAO;
+
+    @Inject
     private UserDao userDao;
 
+    @Getter
+    private List<TenantConfig> tenantConfigs;
+
+    @Getter @Setter
+    private String selectedTenant;
+    @Getter @Setter
+    private String selectedTenantName;
     @Getter @Setter
     private String username;
     @Getter @Setter
@@ -28,8 +47,21 @@ public class LoginController implements Serializable {
     @Getter @Setter
     private User loggedUser;
 
+    @Getter
+    private String serverMacAddress;
+
+    public void loadTenantConfigs() {
+        tenantConfigs = tenantConfigDAO.findAll();
+    }
 
     public String login() {
+
+        TenantContext.setTenantId(selectedTenant);
+        // Store in session attribute
+        FacesContext.getCurrentInstance().getExternalContext().getSessionMap().put("currentTenantId", selectedTenant);
+
+        selectedTenantName = TenantConfigCache.getTenantConfig(selectedTenant).getNome();
+
         User user = userDao.findByUsername(username);
         if (user != null && user.getPassword().equals(hashPassword(password))) {
             loggedUser = user;
