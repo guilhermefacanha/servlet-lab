@@ -1,5 +1,6 @@
-<beans xmlns="https://jakarta.ee/xml/ns/jakartaee" version="4.0">
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="2.0">
     <interceptors>
-        <class>interceptor.TransactionInterceptor</class>
+        <class>app.interceptor.TransactionInterceptor</class>
     </interceptors>
 </beans>

@@ -10,7 +10,7 @@ org/postgresql/jdbc4
 org/postgresql/ds
 org/postgresql/jdbc3
 org/postgresql/copy
-org/postgresql/util
+org/postgresql/app.util
 org/postgresql/gss
 org/postgresql/translation
 org/postgresql

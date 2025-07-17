@@ -365,7 +365,7 @@
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:infinispan:15.0">
             <cache-container name="hibernate" marshaller="JBOSS" modules="org.infinispan.hibernate-cache">
-                <local-cache name="entity">
+                <local-cache name="app.entity">
                     <heap-memory size="10000"/>
                     <expiration max-idle="100000"/>
                 </local-cache>

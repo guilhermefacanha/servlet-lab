@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
-             https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
-             version="3.1">
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
+             http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd"
+             version="2.2">
 
     <persistence-unit name="centralTenantPU" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <non-jta-data-source>java:jboss/PostgresTenantDS</non-jta-data-source>
 
-        <class>entity.TenantConfig</class>
-        <class>converter.db.EncryptedStringConverter</class>
+        <class>app.entity.TenantConfig</class>
+        <class>app.db.EncryptedStringConverter</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
         <properties>
@@ -21,7 +21,7 @@
             <property name="hibernate.default_schema" value="tenants"/>
 
             <!-- Optional: Enable second-level cache if needed -->
-            <property name="jakarta.persistence.sharedCache.mode" value="ENABLE_SELECTIVE"/>
+            <property name="javax.persistence.sharedCache.mode" value="ENABLE_SELECTIVE"/>
             <property name="hibernate.cache.use_second_level_cache" value="true"/>
             <property name="hibernate.cache.use_query_cache" value="true"/>
             <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.infinispan.InfinispanRegionFactory"/>
@@ -30,25 +30,23 @@
         </properties>
     </persistence-unit>
 
-
     <persistence-unit name="appDataPU" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <!--<non-jta-data-source>java:jboss/PostgresDS</non-jta-data-source>-->
 
-        <class>entity.RequestData</class>
-        <class>entity.User</class>
+        <class>app.entity.RequestData</class>
+        <class>app.entity.User</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
         <properties>
+            <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://${DB_HOST:localhost}:5432/servlet_customer002"/>
+            <property name="javax.persistence.jdbc.user" value="usuario"/>
+            <property name="javax.persistence.jdbc.password" value="senha"/>
+            <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
 
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://${DB_HOST:localhost}:5432/servlet_customer002"/>
-            <property name="jakarta.persistence.jdbc.user" value="usuario"/>
-            <property name="jakarta.persistence.jdbc.password" value="senha"/>
-            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver"/>
-
-            <property name="hibernate.multiTenancy" value="DATASOURCE"/>
-            <property name="hibernate.tenant_identifier_resolver" value="tenants.resolver.MyTenantIdentifierResolver"/>
-            <property name="hibernate.multi_tenant_connection_provider" value="tenants.connection.DynamicMultiTenantConnectionProvider"/>
+            <property name="hibernate.multiTenancy" value="DATABASE"/>
+            <property name="hibernate.tenant_identifier_resolver" value="app.tenants.resolver.MyTenantIdentifierResolver"/>
+            <property name="hibernate.multi_tenant_connection_provider" value="app.tenants.connection.DynamicMultiTenantConnectionProvider"/>
 
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
             <property name="hibernate.default_schema" value="servletapp"/>
@@ -61,7 +59,7 @@
             <property name="hibernate.connection.autocommit" value="false"/>
 
             <!-- Optional: Enable second-level cache if needed -->
-            <property name="jakarta.persistence.sharedCache.mode" value="ENABLE_SELECTIVE"/>
+            <property name="javax.persistence.sharedCache.mode" value="ENABLE_SELECTIVE"/>
             <property name="hibernate.cache.use_second_level_cache" value="true"/>
             <property name="hibernate.cache.use_query_cache" value="true"/>
             <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.infinispan.InfinispanRegionFactory"/>

@@ -21,12 +21,16 @@
     <h:body>
         <f:metadata>
             <f:event type="preRenderView" listener="#{loginController.loadTenantConfigs()}"/>
+            <f:event type="preRenderView" listener="#{loginController.checkTenantSession()}"/>
         </f:metadata>
         <p:messages id="msgs" showDetail="true" autoUpdate="true"/>
         <div class="login-panel">
             <p:panel header="Sign In" style="text-align:center;">
                 <h:form>
-                    <p:selectOneMenu id="tenant" value="#{loginController.selectedTenant}"
+                    <p:outputPanel rendered="#{!loginController.showTenantSelection}">
+                        Welcome to <h:outputText value="#{loginController.selectedTenantName}" />
+                    </p:outputPanel>
+                    <p:selectOneMenu id="tenant" value="#{loginController.selectedTenant}" rendered="#{loginController.showTenantSelection}"
                                      style="width:100%;margin-bottom:1em;" requiredMessage="Please select a tenant"
                                      required="true">
                         <f:selectItem itemLabel="Select Tenant" itemValue="#{null}" noSelectionOption="true"/>

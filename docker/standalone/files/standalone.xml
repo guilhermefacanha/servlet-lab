@@ -388,7 +388,7 @@
         <subsystem xmlns="urn:wildfly:health:1.0" security-enabled="false"/>
         <subsystem xmlns="urn:jboss:domain:infinispan:15.0">
             <cache-container name="hibernate" marshaller="JBOSS" modules="org.infinispan.hibernate-cache">
-                <local-cache name="entity">
+                <local-cache name="app.entity">
                     <heap-memory size="10000"/>
                     <expiration max-idle="100000"/>
                 </local-cache>
@@ -555,8 +555,8 @@
         </outbound-socket-binding>
     </socket-binding-group>
     <deployments>
-        <deployment name="servlet" runtime-name="servlet.war">
-            <fs-exploded path="/Users/guilhermelimafacanha/workspace/git/servlet-lab/target/servlet"/>
+        <deployment name="app.servlet" runtime-name="servlet.war">
+            <fs-exploded path="/Users/guilhermelimafacanha/workspace/git/app.servlet-lab/target/app.servlet"/>
         </deployment>
     </deployments>
 </server>
