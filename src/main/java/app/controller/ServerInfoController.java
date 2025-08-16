@@ -2,6 +2,8 @@ package app.controller;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Named;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
@@ -9,6 +11,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
+@Slf4j
 @RequestScoped
 @Named
 public class ServerInfoController implements Serializable {
@@ -17,7 +20,13 @@ public class ServerInfoController implements Serializable {
 
     public String getServerMacAddress() {
         String serverMacAddress = "";
-        String nodeName = StringUtils.defaultIfBlank(System.getenv("WILDFLY_NODE_NAME"), "LOCAL");
+        log.info(" Retrieving server information ...");
+        String nodeName = StringUtils.defaultIfBlank(System.getenv("WILDFLY_NODE_NAME"), "");
+        log.info(" WILDFLY_NODE_NAME: {}", nodeName);
+        if (StringUtils.isBlank(nodeName)) {
+            nodeName = StringUtils.defaultIfBlank(System.getProperty("jboss.node.name"), StringUtils.defaultIfBlank(System.getProperty("jboss.tx.node.id"), "LOCAL"));
+            log.info(" jboss node: {}", nodeName);
+        }
         try {
             Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
             while (networkInterfaces.hasMoreElements()) {
@@ -33,7 +42,7 @@ public class ServerInfoController implements Serializable {
                         macBuilder.append(String.format("%02X%s", hardwareAddress[i], (i < hardwareAddress.length - 1) ? ":" : ""));
                     }
                     // Return the first valid MAC address found
-                    serverMacAddress = nodeName + "-" + macBuilder.toString();
+                    serverMacAddress = nodeName + " - " + macBuilder.toString();
                 }
             }
         } catch (SocketException e) {
