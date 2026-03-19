@@ -5,35 +5,12 @@
              http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd"
              version="2.2">
 
-    <persistence-unit name="centralTenantPU" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="appDataPU" transaction-type="JTA">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-        <non-jta-data-source>java:jboss/PostgresTenantDS</non-jta-data-source>
+        <jta-data-source>java:jboss/PostgresTenantDS</jta-data-source>
 
         <class>app.entity.TenantConfig</class>
         <class>app.db.EncryptedStringConverter</class>
-        <exclude-unlisted-classes>true</exclude-unlisted-classes>
-
-        <properties>
-            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
-            <property name="hibernate.hbm2ddl.auto" value="none"/>
-            <property name="hibernate.show_sql" value="true"/>
-            <property name="hibernate.connection.autocommit" value="false"/>
-            <property name="hibernate.default_schema" value="tenants"/>
-
-            <!-- Optional: Enable second-level cache if needed -->
-            <property name="javax.persistence.sharedCache.mode" value="ENABLE_SELECTIVE"/>
-            <property name="hibernate.cache.use_second_level_cache" value="true"/>
-            <property name="hibernate.cache.use_query_cache" value="true"/>
-            <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.infinispan.InfinispanRegionFactory"/>
-            <property name="hibernate.cache.infinispan.container_name" value="hibernate"/>
-            <property name="hibernate.cache.infinispan.entity.expiration.lifespan" value="300000"/>
-        </properties>
-    </persistence-unit>
-
-    <persistence-unit name="appDataPU" transaction-type="RESOURCE_LOCAL">
-        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-        <!--<non-jta-data-source>java:jboss/PostgresDS</non-jta-data-source>-->
-
         <class>app.entity.RequestData</class>
         <class>app.entity.User</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
@@ -44,12 +21,11 @@
             <property name="javax.persistence.jdbc.password" value="senha"/>
             <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
 
-            <property name="hibernate.multiTenancy" value="DATABASE"/>
+            <property name="hibernate.multiTenancy" value="SCHEMA"/>
             <property name="hibernate.tenant_identifier_resolver" value="app.tenants.resolver.MyTenantIdentifierResolver"/>
             <property name="hibernate.multi_tenant_connection_provider" value="app.tenants.connection.DynamicMultiTenantConnectionProvider"/>
 
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
-            <property name="hibernate.default_schema" value="servletapp"/>
             <property name="hibernate.hbm2ddl.auto" value="none"/>
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="false"/>
@@ -65,6 +41,7 @@
             <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.infinispan.InfinispanRegionFactory"/>
             <property name="hibernate.cache.infinispan.container_name" value="hibernate"/>
             <property name="hibernate.cache.infinispan.entity.expiration.lifespan" value="300000"/>
+            <property name="hibernate.cache.keys_factory" value="org.hibernate.cache.internal.DefaultCacheKeysFactory"/>
         </properties>
     </persistence-unit>
 </persistence>

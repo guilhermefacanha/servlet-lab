@@ -1,13 +1,11 @@
 package app.dao;
 
-import app.annotations.ApplicationTenantDB;
-import app.annotations.TransactionalResourceLocal;
 import app.entity.RequestData;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.io.Serializable;
 import java.util.List;
 
@@ -17,11 +15,9 @@ public class RequestDataDao implements Serializable {
 
     private static final long serialVersionUID = 4053248598231988138L;
 
-    @ApplicationTenantDB
-    @Inject
+    @PersistenceContext
     private EntityManager entityManager;
 
-    @TransactionalResourceLocal
     public RequestData save(RequestData data) {
         log.info("=======  save .... ========");
         data =entityManager.merge(data);
@@ -30,7 +26,6 @@ public class RequestDataDao implements Serializable {
         return data;
     }
 
-    @TransactionalResourceLocal
     public void deleteById(Long id) {
         log.info("=======  deleteById {} .... ========", id);
         RequestData entity = entityManager.find(RequestData.class, id);
@@ -56,7 +51,6 @@ public class RequestDataDao implements Serializable {
         return result;
     }
 
-    @TransactionalResourceLocal
     public void clear() {
         log.info("=======  clear .... ========");
         entityManager.createQuery("DELETE FROM RequestData").executeUpdate();

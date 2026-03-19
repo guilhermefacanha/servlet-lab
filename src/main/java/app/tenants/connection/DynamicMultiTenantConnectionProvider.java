@@ -1,149 +1,93 @@
 package app.tenants.connection;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import app.entity.TenantConfig;
-import org.apache.commons.lang3.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider;
-import org.hibernate.service.spi.ServiceRegistryAwareService;
-import org.hibernate.service.spi.ServiceRegistryImplementor;
-import app.tenants.data.TenantConfigCache;
-import app.tenants.resolver.MyTenantIdentifierResolver;
+import org.hibernate.service.spi.Stoppable;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class DynamicMultiTenantConnectionProvider implements MultiTenantConnectionProvider, ServiceRegistryAwareService {
+/**
+ * Dynamic schema-based MultiTenantConnectionProvider for Hibernate 5
+ */
+@Slf4j
+public class DynamicMultiTenantConnectionProvider implements MultiTenantConnectionProvider, Stoppable {
 
-    private final Map<String, DataSource> tenantDataSources = new ConcurrentHashMap<>();
-    private ServiceRegistryImplementor serviceRegistry; // For potential future use if needed
+    private static final long serialVersionUID = 1L;
 
-    private Map<String, TenantConfig> tenantConfigs = new ConcurrentHashMap<>();
-
-    String dbHost = StringUtils.defaultIfBlank(System.getenv("DB_HOST"), "localhost");
+    private DataSource dataSource;
 
     public DynamicMultiTenantConnectionProvider() {
-        tenantConfigs.put(MyTenantIdentifierResolver.DEFAULT_TENANT_ID, new TenantConfig(MyTenantIdentifierResolver.DEFAULT_TENANT_ID, MyTenantIdentifierResolver.DEFAULT_TENANT_ID, "jdbc:postgresql://"+dbHost+":5432/servlet_tenants", "usuario", "senha"));
+        try {
+            javax.naming.Context ctx = new javax.naming.InitialContext();
+            this.dataSource = (DataSource) ctx.lookup("java:jboss/PostgresTenantDS");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to lookup DataSource via JNDI", e);
+        }
+    }
+
+    public DynamicMultiTenantConnectionProvider(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public Connection getAnyConnection() throws SQLException {
-        // This connection is used by Hibernate for operations that don't yet have a tenant context
-        // (e.g., schema validation for the multi-tenant PU).
-        // It should provide a connection to a 'default' or 'template' tenant database.
-        System.out.println("Getting ANY connection for appDataPU (using default tenant template)");
-        checkLoadedTenantConfigs();
-        return getConnection(MyTenantIdentifierResolver.DEFAULT_TENANT_ID);
-    }
-
-    private void checkLoadedTenantConfigs() {
-        if (tenantConfigs.isEmpty() || tenantConfigs.size() == 1) {
-            tenantConfigs.putAll(TenantConfigCache.getAll());
-            if (!StringUtils.equals("localhost", dbHost)) {
-                tenantConfigs.replaceAll((tenantId, config) -> {
-                    String url = config.getDbUrl();
-                    if (StringUtils.contains(url, "localhost") ) {
-                        url = url.replace("localhost", dbHost);
-                        return new TenantConfig(
-                                config.getTenantId(),
-                                config.getNome(),
-                                url,
-                                config.getDbUsername(),
-                                config.getDbPassword()
-                        );
-                    }
-                    return config;
-                });
-            }
-        }
-    }
-
-    @Override
-    public void releaseAnyConnection(Connection connection) throws SQLException {
-        connection.close(); // Return to pool
-    }
-
-    @Override
-    public Connection getConnection(String tenantIdentifier) throws SQLException {
-        System.out.println("Getting connection for tenant: " + tenantIdentifier);
-        checkLoadedTenantConfigs();
-        DataSource dataSource = tenantDataSources.getOrDefault(tenantIdentifier, null);
-        if (dataSource == null) {
-            createAndCacheDataSource(tenantIdentifier, tenantConfigs.get(tenantIdentifier));
-            dataSource = tenantDataSources.getOrDefault(tenantIdentifier, null);
-        }
         return dataSource.getConnection();
     }
 
     @Override
+    public void releaseAnyConnection(Connection connection) throws SQLException {
+        connection.close();
+    }
+
+    @Override
+    public Connection getConnection(String tenantIdentifier) throws SQLException {
+        log.debug("Getting connection for tenant '{}'", tenantIdentifier);
+        final Connection connection = getAnyConnection();
+        try {
+            // Set schema for the tenant
+            connection.setSchema(tenantIdentifier);
+        } catch (SQLException e) {
+            throw new SQLException("Could not alter JDBC connection to schema ["
+                    + tenantIdentifier + "]", e);
+        }
+        return connection;
+    }
+
+    @Override
     public void releaseConnection(String tenantIdentifier, Connection connection) throws SQLException {
-        connection.close(); // Return to pool
+        try {
+            // Reset to default schema if needed
+            connection.setSchema("public");
+        } catch (SQLException e) {
+            // ignore, just close
+        }
+        connection.close();
     }
 
     @Override
     public boolean supportsAggressiveRelease() {
-        return false; // Typically false for pooled connections
-    }
-
-    public boolean isInjected() {
-        return false; // Not managed by Hibernate's injection mechanism directly
-    }
-
-    @Override
-    public void injectServices(ServiceRegistryImplementor serviceRegistry) {
-        this.serviceRegistry = serviceRegistry;
-        // At this point, you could potentially get other services from Hibernate
-        // if needed, though for a connection provider it's often not necessary.
-    }
-
-    // Helper method to create a HikariCP DataSource
-    private DataSource createAndCacheDataSource(String tenantId, TenantConfig details) {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(details.getDbUrl());
-        config.setUsername(details.getDbUsername());
-        config.setPassword(details.getDbPassword());
-        config.setDriverClassName("org.postgresql.Driver"); // Ensure correct driver
-        config.setPoolName("HikariCP-" + tenantId);
-        config.setMaximumPoolSize(10); // Adjust pool size per tenant as needed
-        config.setMinimumIdle(2);
-        config.setIdleTimeout(300000); // 5 minutes
-        config.setMaxLifetime(1800000); // 30 minutes
-        config.setConnectionTimeout(30000); // 30 seconds
-
-        // Add any other HikariCP or PostgreSQL specific properties
-        // For example: config.addDataSourceProperty("stringtype", "unspecified");
-
-        HikariDataSource ds = new HikariDataSource(config);
-        tenantDataSources.put(tenantId, ds);
-        return ds;
-    }
-
-    @Override
-    public boolean isUnwrappableAs(Class aClass) {
         return false;
     }
 
+    // Hibernate 5 SPI
     @Override
-    public <T> T unwrap(Class<T> clazz) {
-        if (clazz.isAssignableFrom(getClass())) {
-            return clazz.cast(this);
-        }
-        return null;
+    public boolean isUnwrappableAs(Class unwrapType) {
+        return MultiTenantConnectionProvider.class.equals(unwrapType)
+                || DynamicMultiTenantConnectionProvider.class.isAssignableFrom(unwrapType);
     }
 
-    // Don't forget to properly close your DataSources on application shutdown
-    // You might need a @PreDestroy method in a CDI bean or a ServletContextListener
-    public void shutdown() {
-        System.out.println("Shutting down DynamicMultiTenantConnectionProvider...");
-        tenantDataSources.values().forEach(ds -> {
-            if (ds instanceof HikariDataSource) {
-                ((HikariDataSource) ds).close();
-                System.out.println("Closed HikariCP pool: " + ((HikariDataSource) ds).getPoolName());
-            }
-        });
-        tenantDataSources.clear();
+    @Override
+    public <T> T unwrap(Class<T> unwrapType) {
+        if (isUnwrappableAs(unwrapType)) {
+            return (T) this;
+        }
+        throw new IllegalArgumentException("Unknown unwrap type " + unwrapType);
+    }
+
+    @Override
+    public void stop() {
+        // nothing to clean
     }
 }

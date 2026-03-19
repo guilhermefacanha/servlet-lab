@@ -4,6 +4,7 @@ import app.dao.TenantConfigDAO;
 import app.dao.UserDao;
 import app.entity.TenantConfig;
 import app.entity.User;
+import app.tenants.resolver.MyTenantIdentifierResolver;
 import lombok.Getter;
 import lombok.Setter;
 import app.tenants.context.TenantContext;
@@ -53,7 +54,9 @@ public class LoginController implements Serializable {
     private boolean currentTenantSessionCreated = false;
 
     public void loadTenantConfigs() {
+        TenantContext.setTenantId(MyTenantIdentifierResolver.DEFAULT_TENANT_ID);
         tenantConfigs = tenantConfigDAO.findAll();
+        TenantContext.clear();
     }
 
     public void checkTenantSession() {

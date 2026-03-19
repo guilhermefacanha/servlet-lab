@@ -1,23 +1,26 @@
 package app.dao;
 
-import app.annotations.CentralTenantDB;
 import app.entity.TenantConfig;
-import javax.enterprise.context.ApplicationScoped; // Or @RequestScoped
+import com.sun.faces.util.CollectionsUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import lombok.extern.slf4j.Slf4j;
-
+import javax.persistence.PersistenceContext;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 
 @Slf4j
-@ApplicationScoped
+@Stateless
 public class TenantConfigDAO implements Serializable {
 
     private static final long serialVersionUID = -760066567420064194L;
 
-    @Inject
-    @CentralTenantDB // Inject the EntityManager for the central DB
+    @PersistenceContext
     private EntityManager em;
 
     public TenantConfig findByTenantId(String tenantId) {
@@ -35,6 +38,10 @@ public class TenantConfigDAO implements Serializable {
 
     public void save(TenantConfig config) {
         em.persist(config);
+    }
+
+    public String findTenantByHost(String host) {
+        return CollectionUtils.emptyIfNull(findAll()).stream().filter(tc -> StringUtils.equals(tc.getHost(), host)).findFirst().map(TenantConfig::getTenantId).orElse(null);
     }
     // ... other CRUD operations
 }

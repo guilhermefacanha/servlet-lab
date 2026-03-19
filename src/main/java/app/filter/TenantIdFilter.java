@@ -1,10 +1,12 @@
 package app.filter;
 
+import javax.inject.Inject;
 import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import app.dao.TenantConfigDAO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import app.tenants.context.TenantContext;
@@ -12,8 +14,11 @@ import app.tenants.context.TenantContext;
 import java.io.IOException;
 
 @Slf4j
-@WebFilter(urlPatterns = "/*")
+@WebFilter(urlPatterns = "/page/*")
 public class TenantIdFilter implements Filter {
+
+    @Inject
+    TenantConfigDAO dao;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -31,22 +36,36 @@ public class TenantIdFilter implements Filter {
         String paginaAtual = httpRequest.getRequestURL().toString();
 
         if (!isResource(paginaAtual)) {
-            String tenantId = getTenantIdFromHeader(httpRequest);
-            if (StringUtils.isNotBlank(tenantId)) {
-                if(session == null) {
-                    session = httpRequest.getSession(true);
+
+            String tenantId = session == null ? null : (String) session.getAttribute("currentTenantId");
+            log.debug("  trying to retrieve tenantId from session: {}", tenantId);
+
+            if (StringUtils.isBlank(tenantId)) {
+                //Try Get TenantId from header
+                tenantId = getTenantIdFromHeader(httpRequest);
+                log.debug("  trying to retrieve tenantId from header: {}", tenantId);
+
+                //Try Get TenantId from server name
+                if (StringUtils.isBlank(tenantId)) {
+                    String host = httpRequest.getServerName();
+                    host = StringUtils.startsWith(host, "www.") ? StringUtils.replace(host, "www.", "") : host;
+                    log.debug("   getting host name: '{}'", host);
+
+                    tenantId = dao.findTenantByHost(host);
+                    log.debug("  trying to retrieve tenantId from host: {}", tenantId);
                 }
-                session.setAttribute("currentTenantId", tenantId);
 
-                log.debug("TenantIdFilter: Set tenantId from header: {}", tenantId);
+                if (StringUtils.isNotBlank(tenantId)) {
+                    if (session == null) {
+                        session = httpRequest.getSession(true);
+                    }
+                    session.setAttribute("currentTenantId", tenantId);
+
+                    log.debug("TenantIdFilter: Set tenantId from header: {}", tenantId);
+                }
             }
 
-            if (StringUtils.isBlank(tenantId) && session != null) {
-                // Retrieve tenantId from session once user is logged in
-                tenantId = (String) session.getAttribute("currentTenantId");
-            }
-
-            if (tenantId != null) {
+            if (StringUtils.isNotBlank(tenantId)) {
                 TenantContext.setTenantId(tenantId);
                 log.info("TenantIdFilter: Set tenantId from session: {}", tenantId);
             } else {
@@ -55,6 +74,7 @@ public class TenantIdFilter implements Filter {
                 // by the resolver, pointing to the central DB.
                 log.debug("TenantIdFilter: No tenantId in session. Resolver will use default.");
             }
+
         } else {
             log.debug("  ignoring resource request: '{}' ...", paginaAtual);
         }

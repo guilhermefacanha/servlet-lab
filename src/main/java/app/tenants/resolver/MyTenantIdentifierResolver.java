@@ -5,7 +5,7 @@ import app.tenants.context.TenantContext;
 
 public class MyTenantIdentifierResolver implements CurrentTenantIdentifierResolver {
 
-    public static final String DEFAULT_TENANT_ID = "tenants_db"; // Fallback or initial tenant
+    public static final String DEFAULT_TENANT_ID = "tenants"; // Fallback or initial tenant
 
     /**
      * This method is called by Hibernate to determine the current tenant identifier.

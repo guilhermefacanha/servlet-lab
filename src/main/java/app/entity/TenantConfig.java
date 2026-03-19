@@ -24,6 +24,9 @@ public class TenantConfig implements Serializable {
     @Column(unique = true, nullable = false)
     private String tenantId;
 
+    @Column(unique = true, nullable = false)
+    private String host;
+
     @Column(nullable = false)
     private String nome;
 
