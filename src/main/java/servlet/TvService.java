@@ -27,6 +27,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,7 +55,31 @@ public class TvService extends HttpServlet {
     private static final Set<String> STOP_WORDS = new HashSet<>(Arrays.asList(
             "br", "brazil", "tv", "channel", "hd", "fhd", "uhd", "sd", "4k", "ao", "vivo", "live"
     ));
+    private static final long CACHE_TTL_MS = TimeUnit.HOURS.toMillis(1);
+    private static final ConcurrentHashMap<String, CacheEntry> RESULT_CACHE = new ConcurrentHashMap<>();
+
     private volatile List<EpgChannel> epgChannelsCache;
+    private ScheduledExecutorService scheduler;
+
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "tv-cache-refresher");
+            t.setDaemon(true);
+            return t;
+        });
+        // Warm up default params immediately, then refresh every hour
+        scheduler.scheduleAtFixedRate(this::refreshDefaultCache, 0, 1, TimeUnit.HOURS);
+    }
+
+    @Override
+    public void destroy() {
+        if (scheduler != null) {
+            scheduler.shutdownNow();
+        }
+        super.destroy();
+    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -68,36 +96,94 @@ public class TvService extends HttpServlet {
 
         boolean plainFormat = isPlainFormat(req.getParameter("format"));
 
-        // --- Direct M3U URL fallback (old behaviour) ---
         String directUrl = StringUtils.trimToEmpty(req.getParameter("url"));
-        if (StringUtils.isNotBlank(directUrl)) {
-            handleDirectM3uUrl(directUrl, req, resp, plainFormat);
-            return;
-        }
-
-        // --- Xtream Codes via player_api.php ---
         String server = normalizeServer(StringUtils.defaultIfBlank(
                 StringUtils.trimToEmpty(req.getParameter("server")), DEFAULT_SERVER_URL));
         String user = StringUtils.defaultIfBlank(
                 StringUtils.trimToEmpty(req.getParameter("user")), DEFAULT_SERVER_USERNAME);
         String password = StringUtils.defaultIfBlank(
                 StringUtils.trimToEmpty(req.getParameter("pass")), DEFAULT_SERVER_PASSWORD);
-
-        // output extension: m3u8 (HLS) or ts (MPEG-TS), default m3u8
         String ext = StringUtils.defaultIfBlank(req.getParameter("output"), "m3u8");
-
         String[] includeTokens = getIncludeTokens(req);
         String[] excludeTokens = getExcludeTokens(req);
         String[] categoryTokens = splitTokens(req.getParameter("category"));
 
+        String cacheKey = buildCacheKey(server, user, password, ext, includeTokens, excludeTokens, categoryTokens, directUrl);
+        CacheEntry cached = RESULT_CACHE.get(cacheKey);
+        if (cached != null && !cached.isExpired()) {
+            LOGGER.info("Serving TV response from cache (key=" + cacheKey + ")");
+            renderStringResponse(cached.content, resp, plainFormat);
+            return;
+        }
+
+        try {
+            String result;
+            if (StringUtils.isNotBlank(directUrl)) {
+                result = computeDirectM3u(directUrl, includeTokens, excludeTokens);
+            } else {
+                result = computeXtreamM3u(server, user, password, ext, includeTokens, excludeTokens, categoryTokens);
+            }
+            RESULT_CACHE.put(cacheKey, new CacheEntry(result));
+            renderStringResponse(result, resp, plainFormat);
+        } catch (IOException e) {
+            LOGGER.warning("TV computation failed [" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+            resp.sendError(HttpServletResponse.SC_BAD_GATEWAY, "Upstream service error");
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Cache helpers
+    // -------------------------------------------------------------------------
+
+    private String buildCacheKey(String server, String user, String password, String ext,
+                                  String[] includeTokens, String[] excludeTokens,
+                                  String[] categoryTokens, String directUrl) {
+        String[] sortedInclude = includeTokens.clone();
+        Arrays.sort(sortedInclude);
+        String[] sortedExclude = excludeTokens.clone();
+        Arrays.sort(sortedExclude);
+        String[] sortedCategory = categoryTokens.clone();
+        Arrays.sort(sortedCategory);
+        // Hash credentials to avoid storing them in plain text within cache keys
+        int credHash = Objects.hash(user, password);
+        return "url=" + directUrl
+                + "|server=" + server
+                + "|cred=" + Integer.toHexString(credHash)
+                + "|ext=" + ext
+                + "|include=" + String.join(",", sortedInclude)
+                + "|exclude=" + String.join(",", sortedExclude)
+                + "|category=" + String.join(",", sortedCategory);
+    }
+
+    private void refreshDefaultCache() {
+        LOGGER.info("Refreshing default TV cache...");
+        try {
+            String normalizedServer = normalizeServer(DEFAULT_SERVER_URL);
+            String result = computeXtreamM3u(normalizedServer, DEFAULT_SERVER_USERNAME,
+                    DEFAULT_SERVER_PASSWORD, "m3u8", new String[0], new String[0], new String[0]);
+            String key = buildCacheKey(normalizedServer, DEFAULT_SERVER_USERNAME, DEFAULT_SERVER_PASSWORD,
+                    "m3u8", new String[0], new String[0], new String[0], "");
+            RESULT_CACHE.put(key, new CacheEntry(result));
+            LOGGER.info("Default TV cache refreshed successfully.");
+        } catch (Exception e) {
+            LOGGER.warning("Failed to refresh default TV cache [" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Xtream API helpers
+    // -------------------------------------------------------------------------
+
+    private String computeXtreamM3u(String server, String user, String password, String ext,
+                                     String[] includeTokens, String[] excludeTokens,
+                                     String[] categoryTokens) throws IOException {
         // 1) fetch category id -> name map
         Map<String, String> categoriesMap = fetchCategories(server, user, password);
         LOGGER.info("Fetched " + categoriesMap.size() + " categories");
 
         // 2) fetch + filter live streams
         List<JsonNode> streams = fetchAndFilterStreams(
-                server, user, password, includeTokens, excludeTokens, categoryTokens, categoriesMap, resp);
-        if (streams == null) return; // error already sent
+                server, user, password, includeTokens, excludeTokens, categoryTokens, categoriesMap);
 
         // 3) build M3U entries
         List<M3UEntry> entries = streams.stream().map(stream -> {
@@ -120,12 +206,8 @@ public class TvService extends HttpServlet {
 
         LOGGER.info("TV channels after filters: " + entries.size());
         applyEPGIds(entries);
-        renderResp(entries, resp, plainFormat);
+        return buildM3uString(entries);
     }
-
-    // -------------------------------------------------------------------------
-    // Xtream API helpers
-    // -------------------------------------------------------------------------
 
     private Map<String, String> fetchCategories(String server, String user, String password) {
         Map<String, String> map = new LinkedHashMap<>();
@@ -154,8 +236,7 @@ public class TvService extends HttpServlet {
     private List<JsonNode> fetchAndFilterStreams(String server, String user, String password,
                                                  String[] includeTokens, String[] excludeTokens,
                                                  String[] categoryTokens,
-                                                 Map<String, String> categoriesMap,
-                                                 HttpServletResponse resp) throws IOException {
+                                                 Map<String, String> categoriesMap) throws IOException {
         String url = server + "/player_api.php?username=" + encode(user)
                 + "&password=" + encode(password) + "&action=get_live_streams";
         LOGGER.info("Fetching streams: " + url);
@@ -181,9 +262,6 @@ public class TvService extends HttpServlet {
 
                 result.add(stream);
             }
-        } catch (IOException e) {
-            resp.sendError(HttpServletResponse.SC_BAD_GATEWAY, e.getMessage());
-            return null;
         }
         return result;
     }
@@ -208,18 +286,12 @@ public class TvService extends HttpServlet {
     // Direct M3U URL fallback
     // -------------------------------------------------------------------------
 
-    private void handleDirectM3uUrl(String url, HttpServletRequest req, HttpServletResponse resp,
-                                    boolean plainFormat) throws IOException {
-        String[] includeTokens = getIncludeTokens(req);
-        String[] excludeTokens = getExcludeTokens(req);
-
+    private String computeDirectM3u(String url, String[] includeTokens, String[] excludeTokens) throws IOException {
         HttpResponse<String> httpResp = Unirest.get(url)
                 .header("User-Agent", "Mozilla/5.0 Firefox/26.0").asString();
 
         if (httpResp.getStatus() < 200 || httpResp.getStatus() >= 300) {
-            resp.sendError(HttpServletResponse.SC_BAD_GATEWAY,
-                    "Playlist server returned status " + httpResp.getStatus());
-            return;
+            throw new IOException("Playlist server returned status " + httpResp.getStatus());
         }
 
         String[] lines = StringUtils.splitByWholeSeparatorPreserveAllTokens(httpResp.getBody(), "\n");
@@ -238,11 +310,9 @@ public class TvService extends HttpServlet {
             }
         }
         LOGGER.info("TV channels after filters: " + list.size());
-
         LOGGER.info("Apply EPG ids: " + list.size());
         applyEPGIds(list);
-
-        renderResp(list, resp, plainFormat);
+        return buildM3uString(list);
     }
 
     private void applyEPGIds(List<M3UEntry> list) {
@@ -545,7 +615,13 @@ public class TvService extends HttpServlet {
         return Arrays.stream(excludeTokens).noneMatch(t -> StringUtils.containsIgnoreCase(line, t));
     }
 
-    private void renderResp(List<M3UEntry> list, HttpServletResponse resp, boolean plainFormat) throws IOException {
+    private String buildM3uString(List<M3UEntry> list) {
+        return "#EXTM3U" + System.lineSeparator()
+                + list.stream().map(M3UEntry::getChannel)
+                .collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    private void renderStringResponse(String content, HttpServletResponse resp, boolean plainFormat) throws IOException {
         resp.setContentType("text/plain");
         resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
         if (plainFormat) {
@@ -554,10 +630,7 @@ public class TvService extends HttpServlet {
             resp.setHeader("Content-Disposition", "attachment; filename=\"channels.m3u\"");
         }
         try (OutputStream outputStream = resp.getOutputStream()) {
-            String outputResult = "#EXTM3U" + System.lineSeparator()
-                    + list.stream().map(M3UEntry::getChannel)
-                    .collect(Collectors.joining(System.lineSeparator()));
-            outputStream.write(outputResult.getBytes(StandardCharsets.UTF_8));
+            outputStream.write(content.getBytes(StandardCharsets.UTF_8));
             outputStream.flush();
         }
     }
@@ -599,5 +672,18 @@ public class TvService extends HttpServlet {
             throw new RuntimeException(e);
         }
     }
-}
 
+    private static final class CacheEntry {
+        final String content;
+        final long cachedAt;
+
+        CacheEntry(String content) {
+            this.content = content;
+            this.cachedAt = System.currentTimeMillis();
+        }
+
+        boolean isExpired() {
+            return System.currentTimeMillis() - cachedAt > CACHE_TTL_MS;
+        }
+    }
+}
