@@ -1,4 +1,4 @@
-package app.servlet;
+package servlet;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MappingIterator;
