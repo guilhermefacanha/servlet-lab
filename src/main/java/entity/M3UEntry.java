@@ -9,6 +9,7 @@ public class M3UEntry {
 
     private String data;
     private String url;
+    private String epgId;
 
     public String getChannel() {
         return data + System.lineSeparator() + url;
