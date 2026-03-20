@@ -8,6 +8,7 @@ import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -36,7 +37,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@WebServlet("/tv")
+@WebServlet(value = "/tv", loadOnStartup = 99)
 public class TvService extends HttpServlet {
 
     private static final long serialVersionUID = -4645128584699214422L;
@@ -61,8 +62,9 @@ public class TvService extends HttpServlet {
     private volatile List<EpgChannel> epgChannelsCache;
     private ScheduledExecutorService scheduler;
 
+
     @Override
-    public void init() throws ServletException {
+    public void init(ServletConfig config) throws ServletException {
         super.init();
         scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "tv-cache-refresher");
@@ -71,6 +73,8 @@ public class TvService extends HttpServlet {
         });
         // Warm up default params immediately, then refresh every hour
         scheduler.scheduleAtFixedRate(this::refreshDefaultCache, 0, 1, TimeUnit.HOURS);
+
+        this.refreshDefaultCache();
     }
 
     @Override
