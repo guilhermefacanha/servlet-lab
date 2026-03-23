@@ -37,7 +37,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@WebServlet(value = "/tv", loadOnStartup = 99)
+@WebServlet(value = "/tv", loadOnStartup = 97)
 public class TvService extends HttpServlet {
 
     private static final long serialVersionUID = -4645128584699214422L;
