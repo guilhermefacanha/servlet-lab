@@ -36,10 +36,13 @@ public class DatabaseSupaHealthChecker extends HttpServlet {
 
 	@Override
 	public void init(ServletConfig config) throws ServletException {
+
+        LOGGER.info("Initializing Database Health Checker");
 		super.init(config);
 
 		dbPassword = resolveDbPassword();
 		if (dbPassword == null) {
+            LOGGER.severe("Missing SUPA_DB_PASSWORD. Set -DSUPA_DB_PASSWORD=... or environment variable SUPA_DB_PASSWORD for DatabaseSupaHealthChecker");
 			throw new ServletException("Missing SUPA_DB_PASSWORD. Set -DSUPA_DB_PASSWORD=... or environment variable SUPA_DB_PASSWORD for DatabaseSupaHealthChecker");
 		}
 
